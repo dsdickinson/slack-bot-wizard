@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wizard-bot
+  namespace: slack-bot-wizard
+
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: wizard-bot
+
+  template:
+    metadata:
+      labels:
+        app: wizard-bot
+
+    spec:
+      containers:
+      - name: wizard-bot
+        image: slack-bot-wizard:latest
+        imagePullPolicy: Never
+
+        env:
+        - name: SLACK_BOT_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: slack-secrets
+              key: bot-token
+
+        - name: SLACK_APP_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: slack-secrets
+              key: app-token
+
+        - name: LLM_API_URL
+          value: "http://localhost:11434/api/generate"
+
+        - name: LLM_MODEL
+          value: "mistral"
