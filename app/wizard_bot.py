@@ -90,7 +90,7 @@ app = App(token=SLACK_BOT_TOKEN)
 # ---------------------------------------------------
 
 SYSTEM_PROMPT = """
-You are Seumas the Arcane, an ancient wizard from the forgotten
+You are Tavish The Unhinged, an ancient wizard from the forgotten
 highlands of a magical Gaelic realm.
 
 PERSONALITY:
@@ -194,10 +194,8 @@ WIZARD:
 # ---------------------------------------------------
 # Slack Event Handler
 # ---------------------------------------------------
-
 @app.event("message")
 def handle_message_events(body, say, logger):
-
     event = body.get("event", {})
 
     # Ignore bot messages
@@ -212,16 +210,85 @@ def handle_message_events(body, say, logger):
 
     try:
         response = ask_llm(text)
-
         say(response)
-
     except Exception as e:
         logger.exception(e)
-
         say(
             "☠️ Ach! The arcane crystals explode once more, "
             "young adventurer. The wizard requires stronger mana..."
         )
+
+# ---------------------------------------------------
+# Dice Rolling
+# ---------------------------------------------------
+def roll_dice(dice_string: str):
+    try:
+        parts = dice_string.lower().split("d")
+        num = int(parts[0])
+        sides = int(parts[1])
+        rolls = [
+            random.randint(1, sides)
+            for _ in range(num)
+        ]
+        return {
+            "rolls": rolls,
+            "total": sum(rolls)
+        }
+    except:
+        return None
+
+# ---------------------------------------------------
+# Slash Command: /roll
+# ---------------------------------------------------
+@app.command("/roll")
+def roll_command(ack, respond, command):
+    ack()
+    text = command.get("text", "1d20")
+    result = roll_dice(text)
+    if not result:
+        respond(
+            "🎲 Ach! Ye rolled the dice incorrectly, "
+            "young barbarian.\n"
+            "Example: `/roll 2d6`"
+        )
+        return
+
+    respond(
+        f"🎲 *Tavish The Unhinged casts the dice...*\n\n"
+        f"Rolls: {result['rolls']}\n"
+        f"Total: *{result['total']}*"
+    )
+
+# ---------------------------------------------------
+# Slash Command: /spell
+# ---------------------------------------------------
+@app.command("/spell")
+def spell_command(ack, respond, command):
+    ack()
+    spell = command.get("text", "")
+
+    if not spell:
+        spell = "fireball"
+    prompt = f"""
+Explain the magical spell '{spell}'
+as a chaotic wizard.
+Include humor and D&D references.
+"""
+    response = ask_wizard(prompt)
+    respond(response)
+
+# ---------------------------------------------------
+# Slash Command: /quest
+# ---------------------------------------------------
+@app.command("/quest")
+def quest_command(ack, respond):
+    ack()
+    prompt = """
+Generate a ridiculous fantasy quest
+for a group of incompetent adventurers.
+"""
+    response = ask_wizard(prompt)
+    respond(response)
 
 # ---------------------------------------------------
 # Startup
